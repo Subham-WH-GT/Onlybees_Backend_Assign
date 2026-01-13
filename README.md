@@ -49,3 +49,33 @@ npm run race:test
 It fires 10 parallel requests against capacity 5 and checks:
 - remaining >= 0
 - totalBooked <= capacity
+
+## What was the overselling problem?
+Overselling happens when multiple users book tickets at the same time.
+
+## What exact mechanism did they implement?
+Core mechanism: Atomic database transaction with conditional update
+
+At the backend level (inside /book API), they ensure:
+
+Read + check + update happen inside a single transaction
+
+Tickets are deducted only if enough tickets are available
+
+If not enough tickets → booking fails immediately
+
+
+## Why is this approach safe (or safe enough) in this setup?
+This approach is considered safe because:
+
+Atomicity
+Transactions guarantee that either all booking steps succeed together or none of them do. Partial updates are impossible.
+
+Isolation
+Concurrent transactions do not interfere with each other in a way that violates data consistency. The database enforces proper ordering and locking internally.
+
+Single source of truth
+The database maintains the authoritative state of ticket availability, preventing inconsistencies caused by multiple application instances.
+
+Invariant preservation
+Critical invariants—such as remaining tickets never becoming negative and total tickets sold never exceeding capacity—are always maintained.
